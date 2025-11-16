@@ -1,24 +1,23 @@
 import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/layout/Navbar";
-import DashboardPage from "./pages/DashboardPage";
-import DevicesPage from "./pages/DevicesPage";
-import UsersPage from "./pages/UsersPage";
-import NotFoundPage from "./pages/NotFoundPage";
+import Layout from "./components/layout/Layout.jsx";
+import DashboardPage from "./pages/DashboardPage.jsx";
+import DevicesPage from "./pages/DevicesPage.jsx";
+import UsersPage from "./pages/UsersPage.jsx";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 function App() {
   return (
-    <div>
-      <Navbar />
-
-      <main className="page-container">
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/devices" element={<DevicesPage />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </main>
-    </div>
+    <Routes>
+      {/* Root */}
+      <Route path="/" element={<Layout />}>
+        {/* index = "/" */}
+        <Route index element={<DashboardPage />} />
+        <Route path="devices" element={<DevicesPage />} />
+        <Route path="users" element={<UsersPage />} />
+        {/* Catch-all */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 }
 

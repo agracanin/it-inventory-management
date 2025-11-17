@@ -1,4 +1,3 @@
-// src/pages/DevicesPage.jsx
 import { useState } from "react";
 
 function DevicesPage({ devices, onAddDevice }) {
@@ -15,21 +14,28 @@ function DevicesPage({ devices, onAddDevice }) {
     assignedToUserId: "",
   });
 
+  // filter + search state
+  const [filterStatus, setFilterStatus] = useState("all"); // "all" | "deployed" | "not_deployed"
+  const [searchTerm, setSearchTerm] = useState("");
+
   const totalDevices = devices.length;
   const deployedCount = devices.filter(
-    (device) => device.status === "deployed"
+    (device) => normalizeStatus(device.status) === "deployed"
   ).length;
   const notDeployedCount = devices.filter(
-    (device) => device.status === "not_deployed"
+    (device) => normalizeStatus(device.status) === "not_deployed"
   ).length;
 
+  function normalizeStatus(status) {
+    const s = status?.trim().toLowerCase();
+    return s === "deployed" ? "deployed" : "not_deployed";
+  }
+
   const getStatusLabel = (status) =>
-    status?.trim().toLowerCase() === "deployed"
-      ? "Deployed"
-      : "Not deployed";
+    normalizeStatus(status) === "deployed" ? "Deployed" : "Not deployed";
 
   const getStatusClassName = (status) =>
-    status?.trim().toLowerCase() === "deployed"
+    normalizeStatus(status) === "deployed"
       ? "status-badge status-badge--deployed"
       : "status-badge status-badge--not-deployed";
 
@@ -44,7 +50,6 @@ function DevicesPage({ devices, onAddDevice }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // basic required fields; you can tweak this
     if (!formData.id.trim()) {
       alert("ID is required.");
       return;
@@ -56,7 +61,7 @@ function DevicesPage({ devices, onAddDevice }) {
       type: formData.type.trim(),
       make: formData.make.trim(),
       model: formData.model.trim(),
-      status: formData.status, // "deployed" or "not_deployed"
+      status: formData.status, // "deployed" | "not_deployed"
       location: formData.location.trim(),
       notes: formData.notes.trim(),
       assignedToUserId: formData.assignedToUserId.trim() || null,
@@ -64,7 +69,6 @@ function DevicesPage({ devices, onAddDevice }) {
 
     onAddDevice(newDevice);
 
-    // reset + close form
     setFormData({
       id: "",
       serialNumber: "",
@@ -82,6 +86,33 @@ function DevicesPage({ devices, onAddDevice }) {
   const handleCancel = () => {
     setIsAdding(false);
   };
+
+  // apply filters + search
+  const filteredDevices = devices.filter((device) => {
+    const status = normalizeStatus(device.status);
+
+    const matchesStatus =
+      filterStatus === "all" || status === filterStatus;
+
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return matchesStatus;
+
+    const haystack = [
+      device.id,
+      device.serialNumber,
+      device.type,
+      device.make,
+      device.model,
+      device.location,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch = haystack.includes(term);
+
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <section>
@@ -178,7 +209,7 @@ function DevicesPage({ devices, onAddDevice }) {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="e.g. In office, Remote"
+                placeholder="e.g. HQ, Remote"
               />
             </label>
           </div>
@@ -223,6 +254,55 @@ function DevicesPage({ devices, onAddDevice }) {
         </form>
       )}
 
+
+      {/* Device search */}
+      <div className="devices-filters">
+        <div className="devices-filter-status">
+          <button
+            type="button"
+            className={
+              filterStatus === "all"
+                ? "chip chip--active"
+                : "chip"
+            }
+            onClick={() => setFilterStatus("all")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className={
+              filterStatus === "deployed"
+                ? "chip chip--active"
+                : "chip"
+            }
+            onClick={() => setFilterStatus("deployed")}
+          >
+            Deployed
+          </button>
+          <button
+            type="button"
+            className={
+              filterStatus === "not_deployed"
+                ? "chip chip--active"
+                : "chip"
+            }
+            onClick={() => setFilterStatus("not_deployed")}
+          >
+            Not deployed
+          </button>
+        </div>
+
+        <div className="devices-search">
+          <input
+            type="text"
+            placeholder="Search by ID, serial, type, make, model, location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
       <table className="table">
         <thead>
           <tr>
@@ -234,7 +314,7 @@ function DevicesPage({ devices, onAddDevice }) {
           </tr>
         </thead>
         <tbody>
-          {devices.map((device) => (
+          {filteredDevices.map((device) => (
             <tr key={device.id}>
               <td>{device.id}</td>
               <td>{device.type}</td>
@@ -249,6 +329,13 @@ function DevicesPage({ devices, onAddDevice }) {
               <td>{device.location}</td>
             </tr>
           ))}
+          {filteredDevices.length === 0 && (
+            <tr>
+              <td colSpan={5} style={{ textAlign: "center" }}>
+                No devices match your filters.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </section>

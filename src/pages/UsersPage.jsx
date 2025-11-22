@@ -1,10 +1,8 @@
 function UsersPage({ users, devices }) {
-  const totalUsers=users.length;
-  const activeUsers = users.filter((u) => u.status === "active").length;
+  const totalUsers = users.length;
 
-  const getDeviceCountForUser = (userId) => 
+  const getDeviceCountForUser = (userId) =>
     devices.filter((device) => device.assignedToUserId === userId).length;
-
 
   return (
     <section>
@@ -13,23 +11,17 @@ function UsersPage({ users, devices }) {
 
       <div className="users-summary">
         <span>Total users: {totalUsers}</span>
-        <span>Active users: {activeUsers}</span>
-        <span>Inactive: {totalUsers - activeUsers}</span>
       </div>
-
 
       <table className="table">
         <thead>
           <tr>
             <th>Name</th>
-            <th>Email</th>
             <th>Department</th>
             <th>Location</th>
-            <th>Status</th>
-            <th>Assigned Devices</th>
+            <th>Devices assigned</th>
           </tr>
         </thead>
-
         <tbody>
           {users.map((user) => {
             const deviceCount = getDeviceCountForUser(user.id);
@@ -37,16 +29,12 @@ function UsersPage({ users, devices }) {
             return (
               <tr key={user.id}>
                 <td>{user.name}</td>
-                <td>{user.email}</td>
                 <td>{user.department}</td>
                 <td>{user.location}</td>
-                <td>{user.status === "active" ? "Active" : "Inactive"}</td>
                 <td>{deviceCount}</td>
               </tr>
             );
-          }
-            )
-          }
+          })}
         </tbody>
       </table>
     </section>

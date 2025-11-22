@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function DevicesPage({ devices, onAddDevice }) {
+function DevicesPage({ devices, users, onAddDevice, onUpdateDevice }) {
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({
     id: "",
@@ -13,6 +13,12 @@ function DevicesPage({ devices, onAddDevice }) {
     notes: "",
     assignedToUserId: "",
   });
+
+  const getUserName = (userId) => {
+    if (!userId) return "Unassigned";
+    const user = users.find((u) => u.id === userId);
+    return user ? user.name : "Unknown User";
+  };
 
   // filter + search state
   const [filterStatus, setFilterStatus] = useState("all"); // "all" | "deployed" | "not_deployed"
@@ -311,6 +317,7 @@ function DevicesPage({ devices, onAddDevice }) {
             <th>Make / Model</th>
             <th>Status</th>
             <th>Location</th>
+            <th>Assigned to</th>
           </tr>
         </thead>
         <tbody>
@@ -327,6 +334,24 @@ function DevicesPage({ devices, onAddDevice }) {
                 </span>
               </td>
               <td>{device.location}</td>
+              <td>
+                <select
+                  value={device.assignedToUserId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    onUpdateDevice(device.id, {
+                      assignedToUserId: value || null
+                    });
+                  }}
+                >
+                  <option value="">Unassigned</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.department})
+                    </option>
+                  ))}
+                </select>
+              </td>
             </tr>
           ))}
           {filteredDevices.length === 0 && (

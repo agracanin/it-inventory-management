@@ -20,6 +20,14 @@ function App() {
     setDevices((prevDevices) => [...prevDevices, newDevice]);
   };
 
+  const handleUpdateDevice = (deviceId, updates) => {
+    setDevices((prevDevices) => 
+      prevDevices.map((device) =>
+        device.id === deviceId ? {...device, ...updates} : device
+      )
+    );
+  }
+
   return (
     <Routes>
       {/* Root */}
@@ -32,6 +40,8 @@ function App() {
           <DevicesPage
               devices={devices}
               onAddDevice={handleAddDevice}
+              users={users}
+              onUpdateDevice={handleUpdateDevice}
             />}
         />
         <Route path="users" element={<UsersPage users={users} devices={devices} />} />

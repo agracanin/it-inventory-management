@@ -213,3 +213,12 @@ a {
   border-color: #2563eb;
 }
 
+/* Users page summary */
+.users-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}

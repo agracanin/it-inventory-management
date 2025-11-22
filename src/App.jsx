@@ -8,11 +8,13 @@ import UsersPage from "./pages/UsersPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 import { initialDevices } from "./data/mockDevices.js";
+import { initialUsers } from "./data/mockUsers.js";
 
 
 function App() {
 
   const [devices, setDevices] = useState(initialDevices);
+  const [users, setUsers] = useState(initialUsers);
 
   const handleAddDevice = (newDevice) => {
     setDevices((prevDevices) => [...prevDevices, newDevice]);
@@ -32,7 +34,7 @@ function App() {
               onAddDevice={handleAddDevice}
             />}
         />
-        <Route path="users" element={<UsersPage />} />
+        <Route path="users" element={<UsersPage users={users} devices={devices} />} />
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>

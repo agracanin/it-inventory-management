@@ -16,17 +16,39 @@ function App() {
   const [devices, setDevices] = useState(initialDevices);
   const [users, setUsers] = useState(initialUsers);
 
-  const handleAddDevice = (newDevice) => {
-    setDevices((prevDevices) => [...prevDevices, newDevice]);
+
+  const deriveStatus = (device) => {
+    const id = device.assignedToUserId;
+    const isAssigned = id && id.trim() !== "";
+    return isAssigned ? "deployed" : "not_deployed";
   };
 
+  const handleAddDevice = (newDevice) => {
+    setDevices((prevDevices) => [
+      ...prevDevices,
+      {
+        ...newDevice,
+        status: deriveStatus(newDevice),
+      },
+    ]);
+  };
+  
   const handleUpdateDevice = (deviceId, updates) => {
-    setDevices((prevDevices) => 
-      prevDevices.map((device) =>
-        device.id === deviceId ? {...device, ...updates} : device
-      )
+    setDevices((prevDevices) =>
+      prevDevices.map((device) => {
+        if (device.id !== deviceId) return device;
+
+        const next = { ...device, ...updates };
+
+        return {
+          ...next,
+          status: deriveStatus(next),
+        };
+      })
     );
-  }
+  };
+
+
 
   return (
     <Routes>

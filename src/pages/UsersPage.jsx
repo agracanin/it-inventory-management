@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function UsersPage({ users, devices }) {
   const totalUsers = users.length;
 
@@ -20,6 +22,7 @@ function UsersPage({ users, devices }) {
             <th>Department</th>
             <th>Location</th>
             <th>Devices assigned</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -32,6 +35,11 @@ function UsersPage({ users, devices }) {
                 <td>{user.department}</td>
                 <td>{user.location}</td>
                 <td>{deviceCount}</td>
+                <td style={{ textAlign: "right" }}>
+                  <Link className="btn btn-secondary" to={`/users/${user.id}`}>
+                    View
+                  </Link>
+                </td>
               </tr>
             );
           })}

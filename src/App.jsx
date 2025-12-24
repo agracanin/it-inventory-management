@@ -5,6 +5,7 @@ import Layout from "./components/layout/Layout.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import DevicesPage from "./pages/DevicesPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
+import UserDetailPage from "./pages/UserDetailPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 import { initialDevices } from "./data/mockDevices.js";
@@ -67,6 +68,16 @@ function App() {
             />}
         />
         <Route path="users" element={<UsersPage users={users} devices={devices} />} />
+        <Route
+          path="users/:id"
+          element={
+            <UserDetailPage
+              users={users}
+              devices={devices}
+              onUpdateDevice={handleUpdateDevice}
+            />
+          }
+        />
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>

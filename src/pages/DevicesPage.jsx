@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
 import { normalizeStatus } from "../utils/deviceStatus";
+import {
+  findCatalogItemId,
+  resolveDeviceCatalogFields,
+} from "../utils/deviceCatalog";
 import DeviceFilters from "../components/devices/DeviceFilters";
 import DeviceTable from "../components/devices/DeviceTable";
 import DeviceForm from "../components/devices/DeviceForm";
 
-function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice }) {
+function DevicesPage({
+  devices,
+  users,
+  locations,
+  onAddDevice,
+  onUpdateDevice,
+  deviceTypes,
+  deviceCatalog,
+}) {
   // ADD DEVICE
   const [isAdding, setIsAdding] = useState(false);
   const [addFormData, setAddFormData] = useState({
@@ -16,6 +28,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
     location: "",
     notes: "",
     assignedToUserId: "",
+    catalogItemId: "",
   });
 
   // FILTERS / SEARCH
@@ -33,6 +46,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
     location: "",
     notes: "",
     assignedToUserId: "",
+    catalogItemId: "",
   });
 
   // Close edit when filters/search change
@@ -59,12 +73,13 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
     const term = searchTerm.trim().toLowerCase();
     if (!term) return matchesStatus;
 
+    const displayFields = resolveDeviceCatalogFields(device, deviceCatalog);
     const haystack = [
       device.id,
       device.serialNumber,
-      device.type,
-      device.make,
-      device.model,
+      displayFields.type,
+      displayFields.make,
+      displayFields.model,
       device.location,
       getUserName(device.assignedToUserId),
     ]
@@ -78,12 +93,60 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
   // Handlers
   const handleAddChange = (e) => {
     const { name, value } = e.target;
-    setAddFormData((prev) => ({ ...prev, [name]: value }));
+    setAddFormData((prev) => {
+      const next = { ...prev, [name]: value };
+
+      if (name === "type") {
+        next.make = "";
+        next.model = "";
+        next.catalogItemId = "";
+      }
+
+      if (name === "make") {
+        next.model = "";
+        next.catalogItemId = "";
+      }
+
+      if (name === "model") {
+        next.catalogItemId = findCatalogItemId(
+          deviceCatalog,
+          next.type,
+          next.make,
+          value
+        );
+      }
+
+      return next;
+    });
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditFormData((prev) => ({ ...prev, [name]: value }));
+    setEditFormData((prev) => {
+      const next = { ...prev, [name]: value };
+
+      if (name === "type") {
+        next.make = "";
+        next.model = "";
+        next.catalogItemId = "";
+      }
+
+      if (name === "make") {
+        next.model = "";
+        next.catalogItemId = "";
+      }
+
+      if (name === "model") {
+        next.catalogItemId = findCatalogItemId(
+          deviceCatalog,
+          next.type,
+          next.make,
+          value
+        );
+      }
+
+      return next;
+    });
   };
 
   const handleAddSubmit = (e) => {
@@ -103,6 +166,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
       location: addFormData.location.trim(),
       notes: addFormData.notes.trim(),
       assignedToUserId: addFormData.assignedToUserId.trim() || null,
+      catalogItemId: addFormData.catalogItemId || null,
     });
 
     setAddFormData({
@@ -114,6 +178,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
       location: "",
       notes: "",
       assignedToUserId: "",
+      catalogItemId: "",
     });
     setIsAdding(false);
   };
@@ -123,16 +188,27 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
   };
 
   const startEditDevice = (device) => {
+    const displayFields = resolveDeviceCatalogFields(device, deviceCatalog);
+    const catalogItemId =
+      device.catalogItemId ||
+      findCatalogItemId(
+        deviceCatalog,
+        displayFields.type,
+        displayFields.make,
+        displayFields.model
+      );
+
     setEditingDeviceId(device.id);
     setEditFormData({
       id: device.id,
       serialNumber: device.serialNumber || "",
-      type: device.type || "",
-      make: device.make || "",
-      model: device.model || "",
+      type: displayFields.type || "",
+      make: displayFields.make || "",
+      model: displayFields.model || "",
       location: device.location || "",
       notes: device.notes || "",
       assignedToUserId: device.assignedToUserId || "",
+      catalogItemId,
     });
   };
 
@@ -153,6 +229,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
       location: editFormData.location.trim(),
       notes: editFormData.notes.trim(),
       assignedToUserId: editFormData.assignedToUserId.trim() || null,
+      catalogItemId: editFormData.catalogItemId || null,
     });
 
     setEditingDeviceId(null);
@@ -165,6 +242,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
       location: "",
       notes: "",
       assignedToUserId: "",
+      catalogItemId: "",
     });
   };
 
@@ -196,6 +274,8 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
           title={null}
           users={users}
           locations={locations}
+          deviceTypes={deviceTypes}
+          deviceCatalog={deviceCatalog}
           formData={addFormData}
           onChange={handleAddChange}
           onSubmit={handleAddSubmit}
@@ -215,6 +295,7 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
         devices={filteredDevices}
         getUserName={getUserName}
         onEditClick={startEditDevice}
+        deviceCatalog={deviceCatalog}
       />
 
       {editingDeviceId && (
@@ -222,6 +303,8 @@ function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice })
           title="Edit device"
           users={users}
           locations={locations}
+          deviceTypes={deviceTypes}
+          deviceCatalog={deviceCatalog}
           formData={editFormData}
           onChange={handleEditChange}
           onSubmit={handleEditSubmit}

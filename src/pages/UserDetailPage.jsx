@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
+import { resolveDeviceCatalogFields } from "../utils/deviceCatalog";
 
-function UserDetailPage({ users, devices, onUpdateDevice }) {
+function UserDetailPage({ users, devices, deviceCatalog, onUpdateDevice }) {
   const { id } = useParams();
   const user = users.find((entry) => entry.id === id);
 
@@ -42,29 +43,36 @@ function UserDetailPage({ users, devices, onUpdateDevice }) {
           </tr>
         </thead>
         <tbody>
-          {assignedDevices.map((device) => (
-            <tr key={device.id}>
-              <td>{device.id}</td>
-              <td>{device.type}</td>
-              <td>
-                {device.make} {device.model}
-              </td>
-              <td>{device.location}</td>
-              <td style={{ textAlign: "right" }}>
-                {onUpdateDevice && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() =>
-                      onUpdateDevice(device.id, { assignedToUserId: null })
-                    }
-                  >
-                    Unassign
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
+          {assignedDevices.map((device) => {
+            const displayFields = resolveDeviceCatalogFields(
+              device,
+              deviceCatalog
+            );
+
+            return (
+              <tr key={device.id}>
+                <td>{device.id}</td>
+                <td>{displayFields.type}</td>
+                <td>
+                  {displayFields.make} {displayFields.model}
+                </td>
+                <td>{device.location}</td>
+                <td style={{ textAlign: "right" }}>
+                  {onUpdateDevice && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() =>
+                        onUpdateDevice(device.id, { assignedToUserId: null })
+                      }
+                    >
+                      Unassign
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
 
           {assignedDevices.length === 0 && (
             <tr>

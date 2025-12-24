@@ -17,6 +17,51 @@ const STORAGE_KEYS = {
   users: "itInventoryUsers",
   departments: "itInventoryDepartments",
   locations: "itInventoryLocations",
+  deviceTypes: "itInventoryDeviceTypes",
+  deviceCatalog: "itInventoryDeviceCatalog",
+};
+
+const normalizeIdValue = (value) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+const createCatalogId = (type, make, model) => {
+  const parts = [type, make, model].map(normalizeIdValue).filter(Boolean);
+  return `catalog-${parts.join("-")}`;
+};
+
+const buildInitialDeviceTypes = (devices) => {
+  const types = new Set();
+  devices.forEach((device) => {
+    if (device.type) {
+      types.add(device.type);
+    }
+  });
+  return Array.from(types);
+};
+
+const buildInitialDeviceCatalog = (devices) => {
+  const seen = new Set();
+  const catalog = [];
+
+  devices.forEach((device) => {
+    const type = device.type?.trim();
+    const make = device.make?.trim();
+    const model = device.model?.trim();
+
+    if (!type || !make || !model) return;
+
+    const id = createCatalogId(type, make, model);
+    if (seen.has(id)) return;
+
+    seen.add(id);
+    catalog.push({ id, type, make, model });
+  });
+
+  return catalog;
 };
 
 const loadFromStorage = (key, fallback) => {
@@ -40,6 +85,18 @@ const saveToStorage = (key, value) => {
 function App() {
   const [devices, setDevices] = useState(() =>
     loadFromStorage(STORAGE_KEYS.devices, initialDevices)
+  );
+  const [deviceTypes, setDeviceTypes] = useState(() =>
+    loadFromStorage(
+      STORAGE_KEYS.deviceTypes,
+      buildInitialDeviceTypes(initialDevices)
+    )
+  );
+  const [deviceCatalog, setDeviceCatalog] = useState(() =>
+    loadFromStorage(
+      STORAGE_KEYS.deviceCatalog,
+      buildInitialDeviceCatalog(initialDevices)
+    )
   );
   const [users, setUsers] = useState(() =>
     loadFromStorage(STORAGE_KEYS.users, initialUsers)
@@ -117,6 +174,35 @@ function App() {
     );
   };
 
+  const handleAddDeviceType = (type) => {
+    setDeviceTypes((prevTypes) => [...prevTypes, type]);
+  };
+
+  const handleRemoveDeviceType = (type) => {
+    setDeviceTypes((prevTypes) => prevTypes.filter((entry) => entry !== type));
+  };
+
+  const handleAddCatalogItem = ({ type, make, model }) => {
+    setDeviceCatalog((prevCatalog) => {
+      const baseId = createCatalogId(type, make, model);
+      let id = baseId;
+      let counter = 2;
+
+      while (prevCatalog.some((item) => item.id === id)) {
+        id = `${baseId}-${counter}`;
+        counter += 1;
+      }
+
+      return [...prevCatalog, { id, type, make, model }];
+    });
+  };
+
+  const handleRemoveCatalogItem = (id) => {
+    setDeviceCatalog((prevCatalog) =>
+      prevCatalog.filter((item) => item.id !== id)
+    );
+  };
+
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.devices, devices);
   }, [devices]);
@@ -133,6 +219,14 @@ function App() {
     saveToStorage(STORAGE_KEYS.locations, locations);
   }, [locations]);
 
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.deviceTypes, deviceTypes);
+  }, [deviceTypes]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.deviceCatalog, deviceCatalog);
+  }, [deviceCatalog]);
+
   return (
     <Routes>
       {/* Root */}
@@ -148,6 +242,8 @@ function App() {
               locations={locations}
               users={users}
               onUpdateDevice={handleUpdateDevice}
+              deviceTypes={deviceTypes}
+              deviceCatalog={deviceCatalog}
             />
           }
         />
@@ -170,6 +266,7 @@ function App() {
             <UserDetailPage
               users={users}
               devices={devices}
+              deviceCatalog={deviceCatalog}
               onUpdateDevice={handleUpdateDevice}
             />
           }
@@ -180,10 +277,16 @@ function App() {
             <SettingsPage
               departments={departments}
               locations={locations}
+              deviceTypes={deviceTypes}
+              deviceCatalog={deviceCatalog}
               onAddDepartment={handleAddDepartment}
               onRemoveDepartment={handleRemoveDepartment}
               onAddLocation={handleAddLocation}
               onRemoveLocation={handleRemoveLocation}
+              onAddDeviceType={handleAddDeviceType}
+              onRemoveDeviceType={handleRemoveDeviceType}
+              onAddCatalogItem={handleAddCatalogItem}
+              onRemoveCatalogItem={handleRemoveCatalogItem}
             />
           }
         />

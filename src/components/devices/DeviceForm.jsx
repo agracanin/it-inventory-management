@@ -2,12 +2,35 @@ function DeviceForm({
   title,
   users,
   locations,
+  deviceTypes,
+  deviceCatalog,
   formData,
   onChange,
   onSubmit,
   onCancel,
   submitLabel,
 }) {
+  const availableMakes = Array.from(
+    new Set(
+      (deviceCatalog || [])
+        .filter((entry) => entry.type === formData.type)
+        .map((entry) => entry.make)
+        .filter(Boolean)
+    )
+  );
+
+  const availableModels = Array.from(
+    new Set(
+      (deviceCatalog || [])
+        .filter(
+          (entry) =>
+            entry.type === formData.type && entry.make === formData.make
+        )
+        .map((entry) => entry.model)
+        .filter(Boolean)
+    )
+  );
+
   return (
     <form className="device-form" onSubmit={onSubmit}>
       {title && <h2>{title}</h2>}
@@ -38,32 +61,63 @@ function DeviceForm({
       <div className="device-form-row">
         <label>
           Type
-          <input
-            name="type"
-            value={formData.type}
-            onChange={onChange}
-            placeholder="e.g. laptop, monitor"
-          />
+          <select name="type" value={formData.type} onChange={onChange}>
+            <option value="">Select a type</option>
+            {(deviceTypes || []).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+            {formData.type && !(deviceTypes || []).includes(formData.type) && (
+              <option value={formData.type} disabled>
+                {formData.type} (retired)
+              </option>
+            )}
+          </select>
         </label>
 
         <label>
           Make
-          <input
+          <select
             name="make"
             value={formData.make}
             onChange={onChange}
-            placeholder="e.g. Dell"
-          />
+            disabled={!formData.type}
+          >
+            <option value="">Select a make</option>
+            {availableMakes.map((make) => (
+              <option key={make} value={make}>
+                {make}
+              </option>
+            ))}
+            {formData.make && !availableMakes.includes(formData.make) && (
+              <option value={formData.make} disabled>
+                {formData.make} (retired)
+              </option>
+            )}
+          </select>
         </label>
 
         <label>
           Model
-          <input
+          <select
             name="model"
             value={formData.model}
             onChange={onChange}
-            placeholder="e.g. Latitude 5520"
-          />
+            disabled={!formData.type || !formData.make}
+          >
+            <option value="">Select a model</option>
+            {availableModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+            {formData.model && !availableModels.includes(formData.model) && (
+              <option value={formData.model} disabled>
+                {formData.model} (retired)
+              </option>
+            )}
+          </select>
         </label>
       </div>
 

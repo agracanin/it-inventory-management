@@ -1,6 +1,7 @@
 function DeviceForm({
   title,
   users,
+  locations,
   formData,
   onChange,
   onSubmit,
@@ -69,12 +70,23 @@ function DeviceForm({
       <div className="device-form-row">
         <label>
           Location
-          <input
+          <select
             name="location"
             value={formData.location}
             onChange={onChange}
-            placeholder="e.g. HQ, Remote"
-          />
+          >
+            <option value="">Select a location</option>
+            {locations.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+            {formData.location && !locations.includes(formData.location) && (
+              <option value={formData.location} disabled>
+                {formData.location} (retired)
+              </option>
+            )}
+          </select>
         </label>
       </div>
 

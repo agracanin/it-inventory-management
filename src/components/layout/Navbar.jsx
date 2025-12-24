@@ -31,6 +31,15 @@ function Navbar() {
       >
         Users
       </NavLink>
+
+      <NavLink
+        to="/settings"
+        className={({ isActive }) =>
+          "navbar__link" + (isActive ? " navbar__link--active" : "")
+        }
+      >
+        Settings
+      </NavLink>
     </nav>
   );
 }

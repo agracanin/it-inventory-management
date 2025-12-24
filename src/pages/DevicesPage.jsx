@@ -4,7 +4,7 @@ import DeviceFilters from "../components/devices/DeviceFilters";
 import DeviceTable from "../components/devices/DeviceTable";
 import DeviceForm from "../components/devices/DeviceForm";
 
-function DevicesPage({ devices, users, onAddDevice, onUpdateDevice }) {
+function DevicesPage({ devices, users, locations, onAddDevice, onUpdateDevice }) {
   // ADD DEVICE
   const [isAdding, setIsAdding] = useState(false);
   const [addFormData, setAddFormData] = useState({
@@ -195,6 +195,7 @@ function DevicesPage({ devices, users, onAddDevice, onUpdateDevice }) {
         <DeviceForm
           title={null}
           users={users}
+          locations={locations}
           formData={addFormData}
           onChange={handleAddChange}
           onSubmit={handleAddSubmit}
@@ -220,6 +221,7 @@ function DevicesPage({ devices, users, onAddDevice, onUpdateDevice }) {
         <DeviceForm
           title="Edit device"
           users={users}
+          locations={locations}
           formData={editFormData}
           onChange={handleEditChange}
           onSubmit={handleEditSubmit}

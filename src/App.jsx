@@ -21,6 +21,28 @@ const STORAGE_KEYS = {
   deviceCatalog: "itInventoryDeviceCatalog",
 };
 
+const DEFAULT_DEPARTMENTS = [
+  "IT",
+  "Human Resources",
+  "Finance",
+  "Marketing",
+  "Operations",
+];
+const DEFAULT_LOCATIONS = ["In office", "Remote", "Storage"];
+const DEFAULT_DEVICE_TYPES = ["laptop", "desktop", "monitor", "docking_station"];
+
+const deriveStatus = (device) => {
+  const id = device.assignedToUserId;
+  const isAssigned = id && id.trim() !== "";
+  return isAssigned ? "deployed" : "not_deployed";
+};
+
+const buildSeedDevices = (devices) =>
+  devices.map((device) => ({
+    ...device,
+    status: deriveStatus(device),
+  }));
+
 const normalizeIdValue = (value) =>
   value
     .trim()
@@ -31,16 +53,6 @@ const normalizeIdValue = (value) =>
 const createCatalogId = (type, make, model) => {
   const parts = [type, make, model].map(normalizeIdValue).filter(Boolean);
   return `catalog-${parts.join("-")}`;
-};
-
-const buildInitialDeviceTypes = (devices) => {
-  const types = new Set();
-  devices.forEach((device) => {
-    if (device.type) {
-      types.add(device.type);
-    }
-  });
-  return Array.from(types);
 };
 
 const buildInitialDeviceCatalog = (devices) => {
@@ -83,14 +95,15 @@ const saveToStorage = (key, value) => {
 };
 
 function App() {
-  const [devices, setDevices] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.devices, initialDevices)
-  );
+  const [devices, setDevices] = useState(() => {
+    const stored = loadFromStorage(
+      STORAGE_KEYS.devices,
+      buildSeedDevices(initialDevices)
+    );
+    return buildSeedDevices(stored);
+  });
   const [deviceTypes, setDeviceTypes] = useState(() =>
-    loadFromStorage(
-      STORAGE_KEYS.deviceTypes,
-      buildInitialDeviceTypes(initialDevices)
-    )
+    loadFromStorage(STORAGE_KEYS.deviceTypes, DEFAULT_DEVICE_TYPES)
   );
   const [deviceCatalog, setDeviceCatalog] = useState(() =>
     loadFromStorage(
@@ -102,22 +115,11 @@ function App() {
     loadFromStorage(STORAGE_KEYS.users, initialUsers)
   );
   const [departments, setDepartments] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.departments, [
-      "Underwriting",
-      "Claims",
-      "IT",
-      "Finance",
-    ])
+    loadFromStorage(STORAGE_KEYS.departments, DEFAULT_DEPARTMENTS)
   );
   const [locations, setLocations] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.locations, ["HQ", "Remote", "Branch"])
+    loadFromStorage(STORAGE_KEYS.locations, DEFAULT_LOCATIONS)
   );
-
-  const deriveStatus = (device) => {
-    const id = device.assignedToUserId;
-    const isAssigned = id && id.trim() !== "";
-    return isAssigned ? "deployed" : "not_deployed";
-  };
 
   const handleAddDevice = (newDevice) => {
     setDevices((prevDevices) => [
@@ -201,6 +203,21 @@ function App() {
     setDeviceCatalog((prevCatalog) =>
       prevCatalog.filter((item) => item.id !== id)
     );
+  };
+
+  const handleResetLocalData = () => {
+    if (typeof window !== "undefined") {
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        window.localStorage.removeItem(key);
+      });
+    }
+
+    setDevices(buildSeedDevices(initialDevices));
+    setUsers(initialUsers);
+    setDepartments(DEFAULT_DEPARTMENTS);
+    setLocations(DEFAULT_LOCATIONS);
+    setDeviceTypes(DEFAULT_DEVICE_TYPES);
+    setDeviceCatalog(buildInitialDeviceCatalog(initialDevices));
   };
 
   useEffect(() => {
@@ -287,6 +304,7 @@ function App() {
               onRemoveDeviceType={handleRemoveDeviceType}
               onAddCatalogItem={handleAddCatalogItem}
               onRemoveCatalogItem={handleRemoveCatalogItem}
+              onResetLocalData={handleResetLocalData}
             />
           }
         />

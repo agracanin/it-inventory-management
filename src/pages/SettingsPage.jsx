@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const normalizeValue = (value) => value.trim().toLowerCase();
 
@@ -15,6 +16,7 @@ function SettingsPage({
   onRemoveDeviceType,
   onAddCatalogItem,
   onRemoveCatalogItem,
+  onResetLocalData,
 }) {
   const [newDepartment, setNewDepartment] = useState("");
   const [newLocation, setNewLocation] = useState("");
@@ -22,6 +24,7 @@ function SettingsPage({
   const [newCatalogType, setNewCatalogType] = useState("");
   const [newCatalogMake, setNewCatalogMake] = useState("");
   const [newCatalogModel, setNewCatalogModel] = useState("");
+  const navigate = useNavigate();
 
   const handleAddDepartment = (event) => {
     event.preventDefault();
@@ -102,6 +105,19 @@ function SettingsPage({
     setNewCatalogType("");
     setNewCatalogMake("");
     setNewCatalogModel("");
+  };
+
+  const handleResetLocalData = () => {
+    const confirmed = window.confirm(
+      "Reset local data and restore the default seed data?"
+    );
+    if (!confirmed) return;
+
+    if (onResetLocalData) {
+      onResetLocalData();
+    }
+
+    navigate("/");
   };
 
   return (
@@ -298,6 +314,16 @@ function SettingsPage({
             )}
           </ul>
         </div>
+      </div>
+
+      <div className="settings-card settings-danger">
+        <h2>Danger zone</h2>
+        <p className="settings-note">
+          Reset users, devices, and settings back to the default seed data.
+        </p>
+        <button type="button" className="btn btn-danger" onClick={handleResetLocalData}>
+          Reset local data
+        </button>
       </div>
     </section>
   );

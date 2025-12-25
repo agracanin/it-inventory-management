@@ -249,7 +249,18 @@ function App() {
       {/* Root */}
       <Route path="/" element={<Layout />}>
         {/* index = "/" */}
-        <Route index element={<DashboardPage />} />
+        <Route
+          index
+          element={
+            <DashboardPage
+              devices={devices}
+              users={users}
+              locations={locations}
+              deviceTypes={deviceTypes}
+              deviceCatalog={deviceCatalog}
+            />
+          }
+        />
         <Route
           path="/devices"
           element={
@@ -316,3 +327,5 @@ function App() {
 }
 
 export default App;
+
+

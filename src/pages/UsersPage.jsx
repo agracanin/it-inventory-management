@@ -1,21 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-const renderOptions = (options, currentValue, placeholder) => (
-  <>
-    <option value="">{placeholder}</option>
-    {options.map((option) => (
-      <option key={option} value={option}>
-        {option}
-      </option>
-    ))}
-    {currentValue && !options.includes(currentValue) && (
-      <option value={currentValue} disabled>
-        {currentValue} (retired)
-      </option>
-    )}
-  </>
-);
+import Modal from "../components/common/Modal";
+import UserForm from "../components/users/UserForm";
 
 function UsersPage({
   users,
@@ -26,20 +12,20 @@ function UsersPage({
   onUpdateUser,
 }) {
   const totalUsers = users.length;
-  const [isAdding, setIsAdding] = useState(false);
   const [addFormData, setAddFormData] = useState({
     id: "",
     name: "",
     department: "",
     location: "",
   });
-  const [editingUserId, setEditingUserId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     id: "",
     name: "",
     department: "",
     location: "",
   });
+  const [modalMode, setModalMode] = useState(null);
+  const [activeUserId, setActiveUserId] = useState(null);
 
   const getDeviceCountForUser = (userId) =>
     devices.filter((device) => device.assignedToUserId === userId).length;
@@ -87,15 +73,16 @@ function UsersPage({
       department: "",
       location: "",
     });
-    setIsAdding(false);
+    setModalMode(null);
   };
 
   const handleAddCancel = () => {
-    setIsAdding(false);
+    setModalMode(null);
   };
 
   const startEditUser = (user) => {
-    setEditingUserId(user.id);
+    setModalMode("edit");
+    setActiveUserId(user.id);
     setEditFormData({
       id: user.id,
       name: user.name || "",
@@ -113,13 +100,14 @@ function UsersPage({
       return;
     }
 
-    onUpdateUser(editingUserId, {
+    onUpdateUser(activeUserId, {
       name,
       department: editFormData.department.trim(),
       location: editFormData.location.trim(),
     });
 
-    setEditingUserId(null);
+    setModalMode(null);
+    setActiveUserId(null);
     setEditFormData({
       id: "",
       name: "",
@@ -129,7 +117,19 @@ function UsersPage({
   };
 
   const handleEditCancel = () => {
-    setEditingUserId(null);
+    setModalMode(null);
+    setActiveUserId(null);
+  };
+
+  const openAddModal = () => {
+    setModalMode("add");
+    setActiveUserId(null);
+    setAddFormData({
+      id: "",
+      name: "",
+      department: "",
+      location: "",
+    });
   };
 
   return (
@@ -142,73 +142,10 @@ function UsersPage({
       </div>
 
       <div className="devices-actions">
-        {!isAdding && (
-          <button type="button" className="btn" onClick={() => setIsAdding(true)}>
-            + Add user
-          </button>
-        )}
+        <button type="button" className="btn" onClick={openAddModal}>
+          + Add user
+        </button>
       </div>
-
-      {isAdding && (
-        <form className="device-form" onSubmit={handleAddSubmit}>
-          <h2>New user</h2>
-
-          <div className="device-form-row">
-            <label>
-              ID*
-              <input
-                name="id"
-                value={addFormData.id}
-                onChange={handleAddChange}
-                placeholder="e.g. user-4"
-                required
-              />
-            </label>
-            <label>
-              Name*
-              <input
-                name="name"
-                value={addFormData.name}
-                onChange={handleAddChange}
-                placeholder="e.g. Alex Johnson"
-                required
-              />
-            </label>
-          </div>
-
-          <div className="device-form-row">
-            <label>
-              Department
-              <select
-                name="department"
-                value={addFormData.department}
-                onChange={handleAddChange}
-              >
-                {renderOptions(departments, addFormData.department, "Select a department")}
-              </select>
-            </label>
-            <label>
-              Location
-              <select
-                name="location"
-                value={addFormData.location}
-                onChange={handleAddChange}
-              >
-                {renderOptions(locations, addFormData.location, "Select a location")}
-              </select>
-            </label>
-          </div>
-
-          <div className="device-form-actions">
-            <button type="submit" className="btn btn-primary">
-              Save user
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={handleAddCancel}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
 
       <table className="table">
         <thead>
@@ -251,63 +188,37 @@ function UsersPage({
         </tbody>
       </table>
 
-      {editingUserId && (
-        <form className="device-form" onSubmit={handleEditSubmit}>
-          <h2>Edit user</h2>
-
-          <div className="device-form-row">
-            <label>
-              ID
-              <input name="id" value={editFormData.id} disabled />
-            </label>
-            <label>
-              Name*
-              <input
-                name="name"
-                value={editFormData.name}
-                onChange={handleEditChange}
-                required
-              />
-            </label>
-          </div>
-
-          <div className="device-form-row">
-            <label>
-              Department
-              <select
-                name="department"
-                value={editFormData.department}
-                onChange={handleEditChange}
-              >
-                {renderOptions(
-                  departments,
-                  editFormData.department,
-                  "Select a department"
-                )}
-              </select>
-            </label>
-            <label>
-              Location
-              <select
-                name="location"
-                value={editFormData.location}
-                onChange={handleEditChange}
-              >
-                {renderOptions(locations, editFormData.location, "Select a location")}
-              </select>
-            </label>
-          </div>
-
-          <div className="device-form-actions">
-            <button type="submit" className="btn btn-primary">
-              Save changes
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={handleEditCancel}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      <Modal
+        isOpen={modalMode === "add" || modalMode === "edit"}
+        title={modalMode === "edit" ? "Edit user" : "Add user"}
+        onClose={modalMode === "edit" ? handleEditCancel : handleAddCancel}
+      >
+        {modalMode === "add" && (
+          <UserForm
+            title={null}
+            departments={departments}
+            locations={locations}
+            formData={addFormData}
+            onChange={handleAddChange}
+            onSubmit={handleAddSubmit}
+            onCancel={handleAddCancel}
+            submitLabel="Save user"
+          />
+        )}
+        {modalMode === "edit" && (
+          <UserForm
+            title={null}
+            departments={departments}
+            locations={locations}
+            formData={editFormData}
+            onChange={handleEditChange}
+            onSubmit={handleEditSubmit}
+            onCancel={handleEditCancel}
+            submitLabel="Save changes"
+            idDisabled
+          />
+        )}
+      </Modal>
     </section>
   );
 }

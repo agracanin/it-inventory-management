@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { normalizeStatus } from "../utils/deviceStatus";
 import {
   findCatalogItemId,
@@ -7,6 +7,7 @@ import {
 import DeviceFilters from "../components/devices/DeviceFilters";
 import DeviceTable from "../components/devices/DeviceTable";
 import DeviceForm from "../components/devices/DeviceForm";
+import Modal from "../components/common/Modal";
 
 function DevicesPage({
   devices,
@@ -18,7 +19,6 @@ function DevicesPage({
   deviceCatalog,
 }) {
   // ADD DEVICE
-  const [isAdding, setIsAdding] = useState(false);
   const [addFormData, setAddFormData] = useState({
     id: "",
     serialNumber: "",
@@ -36,7 +36,6 @@ function DevicesPage({
   const [searchTerm, setSearchTerm] = useState("");
 
   // EDIT DEVICE
-  const [editingDeviceId, setEditingDeviceId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     id: "",
     serialNumber: "",
@@ -49,10 +48,9 @@ function DevicesPage({
     catalogItemId: "",
   });
 
-  // Close edit when filters/search change
-  useEffect(() => {
-    setEditingDeviceId(null);
-  }, [filterStatus, searchTerm]);
+  // MODAL
+  const [modalMode, setModalMode] = useState(null);
+  const [activeDeviceId, setActiveDeviceId] = useState(null);
 
   const getUserName = (userId) => {
     if (!userId) return "Unassigned";
@@ -180,11 +178,11 @@ function DevicesPage({
       assignedToUserId: "",
       catalogItemId: "",
     });
-    setIsAdding(false);
+    setModalMode(null);
   };
 
   const handleAddCancel = () => {
-    setIsAdding(false);
+    setModalMode(null);
   };
 
   const startEditDevice = (device) => {
@@ -198,7 +196,8 @@ function DevicesPage({
         displayFields.model
       );
 
-    setEditingDeviceId(device.id);
+    setModalMode("edit");
+    setActiveDeviceId(device.id);
     setEditFormData({
       id: device.id,
       serialNumber: device.serialNumber || "",
@@ -220,7 +219,7 @@ function DevicesPage({
       return;
     }
 
-    onUpdateDevice(editingDeviceId, {
+    onUpdateDevice(activeDeviceId, {
       id: editFormData.id.trim(),
       serialNumber: editFormData.serialNumber.trim(),
       type: editFormData.type.trim(),
@@ -232,7 +231,8 @@ function DevicesPage({
       catalogItemId: editFormData.catalogItemId || null,
     });
 
-    setEditingDeviceId(null);
+    setModalMode(null);
+    setActiveDeviceId(null);
     setEditFormData({
       id: "",
       serialNumber: "",
@@ -247,7 +247,24 @@ function DevicesPage({
   };
 
   const handleEditCancel = () => {
-    setEditingDeviceId(null);
+    setModalMode(null);
+    setActiveDeviceId(null);
+  };
+
+  const openAddModal = () => {
+    setModalMode("add");
+    setActiveDeviceId(null);
+    setAddFormData({
+      id: "",
+      serialNumber: "",
+      type: "",
+      make: "",
+      model: "",
+      location: "",
+      notes: "",
+      assignedToUserId: "",
+      catalogItemId: "",
+    });
   };
 
   return (
@@ -262,27 +279,10 @@ function DevicesPage({
       </div>
 
       <div className="devices-actions">
-        {!isAdding && (
-          <button type="button" className="btn" onClick={() => setIsAdding(true)}>
-            + Add device
-          </button>
-        )}
+        <button type="button" className="btn" onClick={openAddModal}>
+          + Add device
+        </button>
       </div>
-
-      {isAdding && (
-        <DeviceForm
-          title={null}
-          users={users}
-          locations={locations}
-          deviceTypes={deviceTypes}
-          deviceCatalog={deviceCatalog}
-          formData={addFormData}
-          onChange={handleAddChange}
-          onSubmit={handleAddSubmit}
-          onCancel={handleAddCancel}
-          submitLabel="Save device"
-        />
-      )}
 
       <DeviceFilters
         filterStatus={filterStatus}
@@ -298,20 +298,40 @@ function DevicesPage({
         deviceCatalog={deviceCatalog}
       />
 
-      {editingDeviceId && (
-        <DeviceForm
-          title="Edit device"
-          users={users}
-          locations={locations}
-          deviceTypes={deviceTypes}
-          deviceCatalog={deviceCatalog}
-          formData={editFormData}
-          onChange={handleEditChange}
-          onSubmit={handleEditSubmit}
-          onCancel={handleEditCancel}
-          submitLabel="Save changes"
-        />
-      )}
+      <Modal
+        isOpen={modalMode === "add" || modalMode === "edit"}
+        title={modalMode === "edit" ? "Edit device" : "Add device"}
+        onClose={modalMode === "edit" ? handleEditCancel : handleAddCancel}
+      >
+        {modalMode === "add" && (
+          <DeviceForm
+            title={null}
+            users={users}
+            locations={locations}
+            deviceTypes={deviceTypes}
+            deviceCatalog={deviceCatalog}
+            formData={addFormData}
+            onChange={handleAddChange}
+            onSubmit={handleAddSubmit}
+            onCancel={handleAddCancel}
+            submitLabel="Save device"
+          />
+        )}
+        {modalMode === "edit" && (
+          <DeviceForm
+            title={null}
+            users={users}
+            locations={locations}
+            deviceTypes={deviceTypes}
+            deviceCatalog={deviceCatalog}
+            formData={editFormData}
+            onChange={handleEditChange}
+            onSubmit={handleEditSubmit}
+            onCancel={handleEditCancel}
+            submitLabel="Save changes"
+          />
+        )}
+      </Modal>
     </section>
   );
 }

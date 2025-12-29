@@ -1,7 +1,20 @@
 import { Link, useParams } from "react-router-dom";
 import { resolveDeviceCatalogFields } from "../utils/deviceCatalog";
 
-function UserDetailPage({ users, devices, deviceCatalog, onUpdateDevice }) {
+const formatActivityTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
+
+function UserDetailPage({
+  users,
+  devices,
+  deviceCatalog,
+  onUpdateDevice,
+  activityLog,
+}) {
   const { id } = useParams();
   const user = users.find((entry) => entry.id === id);
 
@@ -20,6 +33,25 @@ function UserDetailPage({ users, devices, deviceCatalog, onUpdateDevice }) {
   const assignedDevices = devices.filter(
     (device) => device.assignedToUserId === user.id
   );
+
+  const relatedActivity = Array.isArray(activityLog)
+    ? activityLog.filter((entry) => {
+        if (!entry) return false;
+        if (entry.entityType === "user" && entry.entityId === user.id) {
+          return true;
+        }
+        if (entry.meta?.userId === user.id) return true;
+        if (
+          Array.isArray(entry.meta?.userIds) &&
+          entry.meta.userIds.includes(user.id)
+        ) {
+          return true;
+        }
+        return false;
+      })
+    : [];
+
+  const recentActivity = relatedActivity.slice(0, 5);
 
   return (
     <section>
@@ -83,6 +115,33 @@ function UserDetailPage({ users, devices, deviceCatalog, onUpdateDevice }) {
           )}
         </tbody>
       </table>
+
+      <div style={{ marginTop: "2rem" }}>
+        <h2>Recent activity for this user</h2>
+        <div className="dashboard-panel">
+          {recentActivity.length === 0 ? (
+            <p className="dashboard-muted">
+              No activity logged for this user yet.
+            </p>
+          ) : (
+            <ul className="dashboard-activity">
+              {recentActivity.map((entry, index) => {
+                const description =
+                  entry.summary || entry.action || "Activity updated.";
+                const timestamp = formatActivityTime(entry.ts);
+                return (
+                  <li className="dashboard-activity-item" key={entry.id || index}>
+                    {timestamp && (
+                      <span className="dashboard-muted">{timestamp}</span>
+                    )}
+                    <span>{description}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

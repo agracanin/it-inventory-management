@@ -47,6 +47,13 @@ const buildDeviceLabel = (device, deviceCatalog) => {
   };
 };
 
+const formatActivityTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
+
 function DashboardPage({
   users = [],
   devices = [],
@@ -187,7 +194,9 @@ function DashboardPage({
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
     .slice(0, 5);
 
-  const recentActivity = Array.isArray(activityLog) ? activityLog.slice(0, 5) : [];
+  const recentActivity = Array.isArray(activityLog)
+    ? activityLog.slice(0, 5)
+    : [];
 
   const kpiCards = [
     { label: "Total devices", value: totalDevices },
@@ -416,19 +425,13 @@ function DashboardPage({
         <div className="dashboard-panel">
           {recentActivity.length === 0 ? (
             <p className="dashboard-muted">
-              Activity log coming soon. This will show assignments, edits, and
-              inventory changes.
+              No activity logged yet.
             </p>
           ) : (
             <ul className="dashboard-activity">
               {recentActivity.map((entry, index) => {
-                const description =
-                  entry.description ||
-                  entry.action ||
-                  entry.summary ||
-                  "Activity updated.";
-                const timestamp =
-                  entry.timestamp || entry.time || entry.date || "";
+                const description = entry.summary || entry.action || "Activity updated.";
+                const timestamp = formatActivityTime(entry.ts);
                 return (
                   <li className="dashboard-activity-item" key={entry.id || index}>
                     {timestamp && (
